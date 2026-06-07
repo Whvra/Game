@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+discord:
+  token: "${DISCORD_TOKEN:}"
+  default-channel-id: "${DISCORD_DEFAULT_CHANNEL_ID:1510642399125311630}"
+
+game:
+  play-url: "${GAME_PLAY_URL:http://localhost:4200}"
+
+spring:
+  jackson:
+    serialization:
+      indent_output: true

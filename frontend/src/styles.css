@@ -1,0 +1,38 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: min(720px, 100%);
+}
+
+button {
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
