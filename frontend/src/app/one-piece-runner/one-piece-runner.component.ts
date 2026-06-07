@@ -36,7 +36,7 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
   selectedChar: CharId = 'luffy';
 
   // Share
-  playerName = 'Anonyme';
+  playerName = localStorage.getItem('op-player-name') ?? 'Nakama';
   isSharing = false;
   shareMsg = '';
   shareMsgFade = 0;
@@ -130,7 +130,8 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
   async shareRunnerScore() {
     if (this.isSharing) return;
     this.isSharing = true;
-    const name = this.playerName.trim() || 'Anonyme';
+    const name = this.playerName.trim() || 'Nakama';
+    localStorage.setItem('op-player-name', name);
     const record = this.hiScore;
     const msg = `⚓ ${name} a scoré **${this.score} pts** sur le One Piece Runner! (Record: ${record})`;
     const result = await this.discordService.notifyDiscord(msg);
@@ -754,15 +755,29 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     c.strokeStyle='#111'; c.lineWidth=2.5;
     c.beginPath(); c.arc(x,y-84,12,0.12,Math.PI-0.12); c.stroke();
 
-    // Gear 2 steam (double jump)
+    // Gear 2 active (double jump)
     if (jumping && jumps >= 2) {
-      c.save(); c.globalAlpha=0.55;
-      for (let i=0; i<8; i++) {
-        c.fillStyle = ['#FF5252','#FF6E40','#FFAB40','#FF3D00'][i%4];
-        c.beginPath();
-        c.arc(x-24+i*7+Math.sin(t*5+i)*5, y+Math.random()*14, 5+Math.random()*7, 0, Math.PI*2);
-        c.fill();
+      // Red steam cloud below feet
+      c.save(); c.globalAlpha=0.6;
+      for (let i=0; i<12; i++) {
+        c.fillStyle = ['#FF5252','#FF6E40','#FFAB40','#FF3D00','#FF1744'][i%5];
+        const bx = x - 30 + i*5 + Math.sin(t*6+i)*6;
+        const by = y - 5 + Math.sin(t*4+i*1.2)*8;
+        c.beginPath(); c.arc(bx, by, 4+Math.random()*8, 0, Math.PI*2); c.fill();
       }
+      c.restore();
+      // Red aura glow
+      c.save();
+      const ag = c.createRadialGradient(x, y-50, 8, x, y-50, 55);
+      ag.addColorStop(0, 'rgba(255,60,0,0.22)');
+      ag.addColorStop(1, 'rgba(255,60,0,0)');
+      c.fillStyle = ag; c.beginPath(); c.ellipse(x, y-50, 55, 65, 0, 0, Math.PI*2); c.fill();
+      c.restore();
+      // "GEAR 2!" text popup
+      c.save();
+      c.font='bold 16px Georgia'; c.textAlign='center';
+      c.strokeStyle='#7B1515'; c.lineWidth=4; c.strokeText('GEAR 2!', x, y-128);
+      c.fillStyle='#FF5252'; c.fillText('GEAR 2!', x, y-128);
       c.restore();
     }
     c.restore();
@@ -773,12 +788,7 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     this.shadow(x, y);
     const lp = jumping ? 0 : Math.sin(t*1.4)*14;
 
-    // Boots
-    c.fillStyle='#4E342E'; c.strokeStyle='#212121'; c.lineWidth=2.5;
-    c.beginPath(); (c as any).roundRect(x-20,y-14,16,15,4); c.fill(); c.stroke();
-    c.beginPath(); (c as any).roundRect(x+4, y-14,16,15,4); c.fill(); c.stroke();
-
-    // Pants
+    // Pants FIRST (behind boots)
     c.strokeStyle='#212121'; c.lineWidth=15; c.lineCap='round';
     c.beginPath(); c.moveTo(x-7,y-36); c.lineTo(x-8+lp,y-12); c.stroke();
     c.strokeStyle='#1A1A2E'; c.lineWidth=12;
@@ -787,6 +797,12 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     c.beginPath(); c.moveTo(x+7,y-36); c.lineTo(x+8-lp,y-12); c.stroke();
     c.strokeStyle='#1A1A2E'; c.lineWidth=12;
     c.beginPath(); c.moveTo(x+7,y-36); c.lineTo(x+8-lp,y-12); c.stroke();
+
+    // Boots — positioned at ankle endpoints of each leg
+    const lbx = x-8+lp, rbx = x+8-lp;
+    c.fillStyle='#4E342E'; c.strokeStyle='#212121'; c.lineWidth=2.5;
+    c.beginPath(); (c as any).roundRect(lbx-11, y-13, 21, 15, 4); c.fill(); c.stroke();
+    c.beginPath(); (c as any).roundRect(rbx-10, y-13, 21, 15, 4); c.fill(); c.stroke();
 
     // Green sash
     c.fillStyle='#1B5E20'; c.strokeStyle='#212121'; c.lineWidth=2.5;
@@ -847,12 +863,29 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     c.lineWidth=2;
     c.beginPath(); c.moveTo(x-5,y-93); c.lineTo(x+5,y-93); c.stroke();
 
-    // Speed lines (Zoro)
-    if (!jumping && this.state==='playing') {
-      c.save(); c.globalAlpha=0.38; c.strokeStyle='#fff'; c.lineWidth=2;
-      for (let i=0; i<5; i++) {
-        const ly = y-25-i*20;
-        c.beginPath(); c.moveTo(x-50-i*8,ly); c.lineTo(x-92-i*8,ly); c.stroke();
+    // Speed lines (Zoro) — intensity based on current speed
+    if (this.state==='playing') {
+      const spd = this.speed;
+      const intensity = Math.min(1, (spd - 5) / 15);
+      const lineCount = 5 + Math.floor(intensity * 8);
+      const lineLen = 40 + intensity * 60;
+      const isHyper = spd > 11;
+      c.save();
+      c.globalAlpha = 0.3 + intensity * 0.45;
+      for (let i=0; i<lineCount; i++) {
+        const ly = y - 10 - i * (120 / lineCount);
+        const offset = Math.sin(t*3 + i*0.7) * 6;
+        c.strokeStyle = isHyper ? (i%2===0 ? '#88FF99' : '#AAFFBB') : '#fff';
+        c.lineWidth = isHyper ? 2.5 : 1.8;
+        c.beginPath(); c.moveTo(x-40-offset, ly); c.lineTo(x-40-lineLen-offset, ly); c.stroke();
+      }
+      if (isHyper) {
+        // "HYPER VITESSE!" label at high speed
+        c.save();
+        c.font = 'bold 13px Georgia'; c.textAlign = 'center';
+        c.strokeStyle = '#155A1E'; c.lineWidth = 3; c.strokeText('HYPER VITESSE!', x-20, y-128);
+        c.fillStyle = '#88FF99'; c.fillText('HYPER VITESSE!', x-20, y-128);
+        c.restore();
       }
       c.restore();
     }
@@ -876,13 +909,26 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     // Ifrit Jambe flames
     if (nearSpike) {
       c.save();
-      for (let fi=0; fi<12; fi++) {
-        c.fillStyle=['#FF6D00','#FF3D00','#FFAB00','#FF8C00'][fi%4];
-        c.globalAlpha=0.65+Math.sin(t*4+fi)*0.3;
-        const fx=x-24+fi*4.5+Math.sin(t*5+fi*1.3)*5;
-        const fh=22+Math.sin(t*3+fi*1.7)*14;
+      // Glow aura on legs
+      const ig = c.createRadialGradient(x, y-20, 4, x, y-20, 40);
+      ig.addColorStop(0, 'rgba(255,100,0,0.3)');
+      ig.addColorStop(1, 'rgba(255,60,0,0)');
+      c.fillStyle = ig; c.globalAlpha = 0.8;
+      c.beginPath(); c.ellipse(x, y-20, 40, 32, 0, 0, Math.PI*2); c.fill();
+      // Flame tongues
+      for (let fi=0; fi<14; fi++) {
+        c.fillStyle=['#FF6D00','#FF3D00','#FFAB00','#FF8C00','#FF1744'][fi%5];
+        c.globalAlpha=0.7+Math.sin(t*5+fi)*0.28;
+        const fx=x-28+fi*4.5+Math.sin(t*6+fi*1.3)*6;
+        const fh=24+Math.sin(t*4+fi*1.7)*16;
         c.beginPath(); c.moveTo(fx,y-2); c.lineTo(fx-7,y-2-fh); c.lineTo(fx+7,y-2-fh); c.closePath(); c.fill();
       }
+      c.restore();
+      // "IFRIT JAMBE!" text
+      c.save();
+      c.font='bold 14px Georgia'; c.textAlign='center';
+      c.strokeStyle='#5A1500'; c.lineWidth=3; c.strokeText('IFRIT JAMBE!', x, y-128);
+      c.fillStyle='#FF6D00'; c.fillText('IFRIT JAMBE!', x, y-128);
       c.restore();
     }
 
