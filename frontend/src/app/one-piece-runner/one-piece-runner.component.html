@@ -1,0 +1,25 @@
+<div class="runner-wrap">
+  <canvas #cv (click)="onCanvasClick($event)" (touchstart)="onTouch($event)"></canvas>
+
+  <!-- Share overlay (game over only) -->
+  <div class="share-overlay" *ngIf="shareVisible">
+    <div class="share-box">
+      <input
+        class="name-input"
+        type="text"
+        [(ngModel)]="playerName"
+        placeholder="Ton pseudo"
+        maxlength="20"
+        (click)="$event.stopPropagation()"
+      />
+      <button
+        class="share-btn"
+        [disabled]="isSharing"
+        (click)="shareRunnerScore(); $event.stopPropagation()"
+      >
+        {{ isSharing ? '...' : '⚓ Discord' }}
+      </button>
+    </div>
+    <div class="share-msg" *ngIf="shareMsgFade > 0" [style.opacity]="shareMsgFade">{{ shareMsg }}</div>
+  </div>
+</div>
