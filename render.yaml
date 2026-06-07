@@ -2,7 +2,7 @@ services:
   - type: web
     name: game-bot-backend
     runtime: docker
-    repo: https://github.com/YOUR_USERNAME/YOUR_REPO
+    repo: https://github.com/Whvra/Game.git
     branch: main
     plan: free
     envVars:
@@ -11,5 +11,5 @@ services:
       - key: DISCORD_DEFAULT_CHANNEL_ID
         sync: false
       - key: GAME_PLAY_URL
-        value: https://game-bot-backend.onrender.com
+        value: https://game-5iha.onrender.com/
     autoDeploy: true
