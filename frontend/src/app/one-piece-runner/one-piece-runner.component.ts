@@ -67,7 +67,7 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     },
     zoro: {
       name: 'Roronoa Zoro', ability: 'Hyper Vitesse', desc: 'Score x2 + vite!',
-      color: '#22BB44', jumpF: -13, maxJ: 1, baseSpd: 7, scoreMult: 2,
+      color: '#22BB44', jumpF: -16, maxJ: 1, baseSpd: 7, scoreMult: 2,
     },
     sanji: {
       name: 'Sanji', ability: 'Ifrit Jambe', desc: 'Immunisé aux pics!',
@@ -267,9 +267,11 @@ export class OnePieceRunnerComponent implements AfterViewInit, OnDestroy {
     }
     this.obstacles.push({ x: this.W + 20, y, w, h, type });
 
-    if (this.score > 60 && Math.random() < 0.27 && this.obstacles.length < 4) {
+    // Clusters only on rocks (never on spikes — unpassable for single-jump chars)
+    if (type === 'rock' && this.score > 60 && Math.random() < 0.3 && this.obstacles.length < 4) {
       const last = this.obstacles[this.obstacles.length - 1];
-      this.obstacles.push({ ...last, x: last.x + last.w + 14 + Math.random() * 28 });
+      const gap = 55 + Math.random() * 40; // generous gap so any char can land + re-jump
+      this.obstacles.push({ ...last, x: last.x + last.w + gap });
     }
   }
 
